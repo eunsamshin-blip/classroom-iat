@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Classroom Implicit Association Test (IAT)</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#172033;background:#f5f7fb}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;justify-content:center;padding:24px}
+main{width:min(900px,100%);background:white;border-radius:18px;box-shadow:0 8px 35px #14213d12;padding:clamp(18px,4vw,36px)}
+h1,h2{line-height:1.2}h1{margin-top:0;font-size:clamp(1.5rem,4vw,2.1rem)}h2{font-size:1.3rem}
+p{line-height:1.55}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:12px 18px;background:#243b6b;color:white}
+button.secondary{background:#e9edf5;color:#172033}
+button:disabled{opacity:.5;cursor:not-allowed}
+.hidden{display:none!important}
+.center{text-align:center}
+.muted{color:#5c667a}
+.panel{background:#f3f5f9;border-radius:14px;padding:18px;margin:14px 0}
+.keybox{display:flex;justify-content:space-between;gap:12px;margin:18px 0}
+.keybox>div{flex:1;background:#e9edf5;border-radius:12px;padding:14px;text-align:center;min-height:86px}
+.key{font-weight:800;font-size:1.3rem;display:block}
+.cat{font-weight:700}
+#stimulus{font-size:clamp(2rem,8vw,3.5rem);font-weight:750;letter-spacing:.04em;min-height:110px;display:flex;align-items:center;justify-content:center}
+#error{height:28px;color:#b42318;font-weight:700}
+.progress{height:8px;background:#e8ebf1;border-radius:99px;overflow:hidden;margin:16px 0}
+.progress>div{height:100%;background:#4768aa;width:0;transition:width .2s}
+table{border-collapse:collapse;width:100%;margin:12px 0}
+th,td{padding:10px;border-bottom:1px solid #e4e7ee;text-align:left}
+small{color:#647084}
+.result{font-size:1.15rem;font-weight:700}
+canvas{width:100%;max-width:650px;height:280px}
+ul{line-height:1.6}
+</style>
+</head>
+<body>
+<main>
+<section id="intro">
+<h1>Implicit Association Test (IAT)</h1>
+<p>This classroom demonstration follows the five-stage structure of Experiment 3 in Greenwald, McGhee, and Schwartz (1998), using female names and pleasant/unpleasant word categories.</p>
+<div class="panel">
+<strong>Important educational note</strong>
+<p>This shortened demonstration is intended for learning about reaction-time tasks and implicit associations. It is not a diagnostic tool, and individual scores should not be interpreted as definitive measures of prejudice, character, or behavior.</p>
+</div>
+<h2>How to respond</h2>
+<p>Use the <strong>A</strong> key for the category shown on the left and the <strong>L</strong> key for the category shown on the right. Categorize each item as quickly and accurately as possible. If you make an error, an error message appears briefly; continue with the next item.</p>
+<p>There are five stages and <strong>90 trials</strong> in total: 10 trials in each single-category stage, and 10 practice + 20 scored trials in each combined stage. Press <strong>Space</strong> to advance through instruction and transition screens.</p>
+<button id="start">Begin</button>
+</section>
+
+<section id="task" class="hidden">
+<div class="muted" id="stageTitle"></div>
+
+<div class="keybox"><div id="leftBox"></div><div id="rightBox"></div></div>
+<div class="center"><div id="stimulus">+</div><div id="error"></div></div>
+<p class="center muted" id="taskHint">Respond using A or L.</p>
+</section>
+
+<section id="stageDone" class="hidden center">
+<h2 id="stageDoneTitle">Stage complete</h2>
+<p id="stageDoneText"></p>
+<button id="continue">Continue</button>
+</section>
+
+<section id="results" class="hidden">
+<h1>Your Results</h1>
+<p>Only correct responses from the two combined test blocks are used in this simplified classroom score.</p>
+<div class="panel">
+<div id="means"></div>
+<p class="result" id="effect"></p>
+<p id="interpretation"></p>
+</div>
+<canvas id="chart" width="650" height="280"></canvas>
+<h2>Accuracy</h2>
+<div id="accuracy"></div>
+<h2>What does this score mean?</h2>
+<ul>
+<li>The IAT compares response speed across two pairings of categories. A faster pairing can be consistent with stronger relative associations.</li>
+<li>The result is relative: it does not measure an absolute attitude toward either group.</li>
+<li>Reaction times are affected by many factors, including familiarity with the names, attention, task order, key mapping, and general speed.</li>
+<li>This shortened, fixed-order classroom version is not suitable for research or individual diagnosis. The original study counterbalanced combined-task order and used more trials.</li>
+<li>The female-name categories were selected for a U.S. context in the late 1990s. Their associations may not be familiar or meaningful to students in other cultural contexts.</li>
+</ul>
+<div class="panel"><strong>Discussion questions</strong>
+<ol>
+<li>Did the two combined tasks feel equally easy?</li>
+<li>What factors besides associations could explain a reaction-time difference?</li>
+<li>How should we interpret implicit measures when they differ from explicit self-reports?</li>
+<li>What would need to change before this task could be used in a study with Korean participants?</li>
+</ol></div>
+<p class="muted">No individual trial data are uploaded or transmitted. Results remain in this browser session.</p>
+<button id="restart" class="secondary">Restart test</button>
+</section>
+</main>
+<script>
+const blackNames=["AIESHA","LASHELLE","NICHELLE","SHEREEN","TEMEKA","EBONY","LATISHA","SHANIQUA","TAMEISHA","TERETHA","JASMINE","LATONYA","SHANISE","TANISHA","TIA","LAKISHA","LATOYA","SHARISE","TASHIKA","YOLANDA","LASHANDRA","MALIKA","SHAVONN","TAWANDA","YVETTE"];
+const whiteNames=["AMANDA","COURTNEY","HEATHER","MELANIE","SARA","AMBER","CRYSTAL","KATIE","MEREDITH","SHANNON","BETSY","DONNA","KRISTIN","NANCY","STEPHANIE","BOBBIE-SUE","ELLEN","LAUREN","PEGGY","SUE-ELLEN","COLLEEN","EMILY","MEGAN","RACHEL","WENDY"];
+const pleasant=["caress","freedom","health","love","peace","cheer","friend","heaven","loyal","pleasure","diamond","gentle","honest","lucky","rainbow","diploma","gift","honor","miracle","sunrise","family","happy","laughter","paradise","vacation"];
+const unpleasant=["abuse","crash","filth","murder","sickness","accident","death","grief","poison","stink","assault","disaster","hatred","pollute","tragedy","bomb","divorce","jail","poverty","ugly","cancer","evil","kill","rotten","vomit"];
+const stages=[
+ {title:"Stage 1 — Target discrimination",left:"BLACK",right:"WHITE",kind:"target",reverse:false,n:10,practice:true},
+ {title:"Stage 2 — Attribute discrimination",left:"PLEASANT",right:"UNPLEASANT",kind:"attribute",reverse:false,n:10,practice:true},
+ {title:"Stage 3 — Combined task",left:"BLACK + PLEASANT",right:"WHITE + UNPLEASANT",kind:"combined",reverse:false,practiceN:10,testN:20},
+ {title:"Stage 4 — Reversed target discrimination",left:"WHITE",right:"BLACK",kind:"target",reverse:true,n:10,practice:true},
+ {title:"Stage 5 — Reversed combined task",left:"WHITE + PLEASANT",right:"BLACK + UNPLEASANT",kind:"combined",reverse:true,practiceN:10,testN:20}
+];
+let stageIndex=0, trials=[], trialIndex=0, stageData=[], testResults={3:[],5:[]}, allData=[], active=false, startTime=0, isPractice=false, currentTrial=null, pendingTimer=null, combinedPhase="practice";
+const $=id=>document.getElementById(id);
+function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a}
+function sample(arr,n){return shuffle([...arr]).slice(0,n)}
+function buildTrials(s,practice){
+ let n=s.kind==="combined"?(practice?s.practiceN:s.testN):s.n;
+ let items=[];
+ if(s.kind==="target"){
+   let l=s.reverse?whiteNames:blackNames, r=s.reverse?blackNames:whiteNames;
+   items=[...sample(l,Math.ceil(n/2)).map(x=>({stim:x,cat:"left",type:"target"})),...sample(r,Math.floor(n/2)).map(x=>({stim:x,cat:"right",type:"target"}))];
+ }else if(s.kind==="attribute"){
+   items=[...sample(pleasant,Math.ceil(n/2)).map(x=>({stim:x,cat:"left",type:"attribute"})),...sample(unpleasant,Math.floor(n/2)).map(x=>({stim:x,cat:"right",type:"attribute"}))];
+ }else{
+   let leftBlack=!s.reverse;
+   let leftNames=leftBlack?blackNames:whiteNames, rightNames=leftBlack?whiteNames:blackNames;
+   let leftWords=pleasant,rightWords=unpleasant;
+   // The requested block length is the total number of trials, split evenly between names and words.
+   let targetN=Math.ceil(n/2), wordN=Math.floor(n/2);
+   items=[...sample(leftNames,Math.ceil(targetN/2)).map(x=>({stim:x,cat:"left",type:"target"})),...sample(rightNames,Math.floor(targetN/2)).map(x=>({stim:x,cat:"right",type:"target"}))];
+   items=[...items,...sample(leftWords,Math.ceil(wordN/2)).map(x=>({stim:x,cat:"left",type:"attribute"})),...sample(rightWords,Math.floor(wordN/2)).map(x=>({stim:x,cat:"right",type:"attribute"}))];
+   // Alternate target and attribute trials to mirror the original task's structure.
+   let targets=shuffle(items.filter(x=>x.type==="target")), words=shuffle(items.filter(x=>x.type==="attribute"));
+   items=[]; while(targets.length||words.length){if(targets.length)items.push(targets.pop());if(words.length)items.push(words.pop());}
+ }
+ return shuffle(items);
+}
+function showStage(){
+ const s=stages[stageIndex];
+ isPractice=s.kind==="combined" ? combinedPhase==="practice" : false;
+ trials=buildTrials(s,isPractice); trialIndex=0;stageData=[];
+ $("stageTitle").textContent=s.title+(s.kind==="combined"?(isPractice?" — Practice":" — Test"):"");
+ $("leftBox").innerHTML=`<span class="key">A</span><span class="cat">${s.left}</span>`;
+ $("rightBox").innerHTML=`<span class="key">L</span><span class="cat">${s.right}</span>`;
+ $("taskHint").textContent=isPractice?"Practice block — these trials are not included in your score.":"Respond using A or L as quickly and accurately as possible.";
+ $("intro").classList.add("hidden");$("stageDone").classList.add("hidden");$("results").classList.add("hidden");$("task").classList.remove("hidden");
+ nextTrial();
+}
+function nextTrial(){
+ if(trialIndex>=trials.length){finishStage();return;}
+ currentTrial=trials[trialIndex];active=true;startTime=performance.now();
+ $("stimulus").textContent=currentTrial.stim;$("error").textContent="";
+ 
+}
+function keyHandler(e){
+ if(!active || !["a","l"].includes(e.key.toLowerCase()))return;
+ e.preventDefault();
+ const key=e.key.toLowerCase(), response=key==="a"?"left":"right";
+ const rt=performance.now()-startTime, correct=response===currentTrial.cat;
+ active=false;
+ let rec={stage:stageIndex+1,stimulus:currentTrial.stim,type:currentTrial.type,response,correct,rt,practice:isPractice};
+ stageData.push(rec);allData.push(rec);
+ if(stageIndex===2&&!isPractice)testResults[3].push(rec);
+ if(stageIndex===4&&!isPractice)testResults[5].push(rec);
+ if(!correct){$("error").textContent="ERROR";pendingTimer=setTimeout(()=>advance(),350);}
+ else advance();
+}
+function advance(){trialIndex++;nextTrial();}
+function finishStage(){
+ $("task").classList.add("hidden");$("stageDone").classList.remove("hidden");
+ let s=stages[stageIndex];
+ if(s.kind==="combined" && isPractice){
+   $("stageDoneTitle").textContent="Practice complete";
+   $("stageDoneText").textContent="You have completed the practice trials. The next block is scored.";
+   $("continue").textContent="Begin test";
+ }else{
+   $("stageDoneTitle").textContent=stageIndex===4?"Test complete!":"Stage complete";
+   $("stageDoneText").textContent=stageIndex===4?"You have completed all five stages. View your results and debriefing.":`You completed ${s.title}.`;
+   $("continue").textContent=stageIndex===4?"View results":"Continue";
+ }
+}
+function continueStage(){
+ if(stages[stageIndex].kind==="combined" && isPractice){
+   combinedPhase="test";
+   showStage();
+ }else if(stageIndex===4){
+   showResults();
+ }else{
+   stageIndex++;
+   combinedPhase="practice";
+   showStage();
+ }
+}
+function mean(arr){return arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:NaN}
+function showResults(){
+ $("stageDone").classList.add("hidden");$("results").classList.remove("hidden");
+ let a=testResults[3].filter(x=>x.correct),b=testResults[5].filter(x=>x.correct);
+ let m3=mean(a.map(x=>x.rt)),m5=mean(b.map(x=>x.rt)),diff=m5-m3;
+ $("means").innerHTML=`<table><tr><th>Combined condition</th><th>Mean correct RT</th><th>Correct trials</th></tr><tr><td>Black + Pleasant / White + Unpleasant</td><td>${Math.round(m3)} ms</td><td>${a.length}/20</td></tr><tr><td>White + Pleasant / Black + Unpleasant</td><td>${Math.round(m5)} ms</td><td>${b.length}/20</td></tr></table>`;
+ $("effect").textContent=`Difference (Stage 5 − Stage 3): ${Math.round(diff)} ms`;
+ if(diff>0)$("interpretation").textContent="You responded faster in Stage 3 (Black + Pleasant / White + Unpleasant) than in Stage 5. In this task, that relative pattern is consistent with stronger Black–pleasant associations than White–pleasant associations. It should not be treated as a definitive statement about your attitudes.";
+ else if(diff<0)$("interpretation").textContent="You responded faster in Stage 5 (White + Pleasant / Black + Unpleasant) than in Stage 3. In this task, that relative pattern is consistent with stronger White–pleasant associations than Black–pleasant associations. It should not be treated as a definitive statement about your attitudes.";
+ else $("interpretation").textContent="Your mean response times were similar across the two combined conditions. A small or absent difference does not establish that associations are equal.";
+ $("accuracy").innerHTML=`Stage 3: ${Math.round(testResults[3].filter(x=>x.correct).length/20*100)}% correct (${testResults[3].filter(x=>!x.correct).length} errors).<br>Stage 5: ${Math.round(testResults[5].filter(x=>x.correct).length/20*100)}% correct (${testResults[5].filter(x=>!x.correct).length} errors).`;
+ drawChart(m3,m5);
+}
+function drawChart(m3,m5){
+ const c=$("chart"),ctx=c.getContext("2d");ctx.clearRect(0,0,c.width,c.height);
+ const max=Math.max(m3,m5,500)*1.2,base=220,top=30,h=base-top;
+ ctx.strokeStyle="#c7ccd6";ctx.beginPath();ctx.moveTo(70,base);ctx.lineTo(620,base);ctx.stroke();
+ [0,.25,.5,.75,1].forEach(v=>{let y=base-v*h;ctx.strokeStyle="#e5e8ee";ctx.beginPath();ctx.moveTo(70,y);ctx.lineTo(620,y);ctx.stroke();ctx.fillStyle="#657084";ctx.font="13px sans-serif";ctx.fillText(Math.round(max*v),25,y+4)});
+ const vals=[m3,m5],labels=["Black + Pleasant","White + Pleasant"],xs=[190,430];
+ vals.forEach((v,i)=>{let bh=v/max*h;ctx.fillStyle=i===0?"#6d83b8":"#465a85";ctx.fillRect(xs[i]-50,base-bh,100,bh);ctx.fillStyle="#172033";ctx.font="bold 16px sans-serif";ctx.textAlign="center";ctx.fillText(Math.round(v)+" ms",xs[i],base-bh-10);ctx.font="14px sans-serif";ctx.fillText(labels[i],xs[i],base+28);});
+ ctx.textAlign="left";ctx.fillStyle="#172033";ctx.font="15px sans-serif";ctx.fillText("Mean correct reaction time (ms)",70,18);
+}
+$("start").onclick=()=>{stageIndex=0;combinedPhase="practice";testResults={3:[],5:[]};allData=[];showStage()};
+$("continue").onclick=continueStage;
+$("restart").onclick=()=>{clearTimeout(pendingTimer);active=false;$("results").classList.add("hidden");$("intro").classList.remove("hidden");};
+document.addEventListener("keydown",keyHandler);
+document.addEventListener("keydown",e=>{
+ if(e.code!=="Space" || e.repeat)return;
+ if(!$("intro").classList.contains("hidden")){
+   e.preventDefault();$("start").click();
+ }else if(!$("stageDone").classList.contains("hidden")){
+   e.preventDefault();$("continue").click();
+ }
+});
+</script>
+</body>
+</html>
